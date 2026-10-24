@@ -11,27 +11,67 @@ st.set_page_config(
 st.title("📷 OCR Scanner")
 
 mode = st.radio(
-    "Pilih Mode OCR",
-    ["OCR Umum", "OCR KTP HD"]
+    "Mode OCR",
+    ["OCR Umum", "OCR KTP HD"],
+    horizontal=True
 )
 
-photo = st.camera_input("Ambil Foto")
+source = st.radio(
+    "Sumber Gambar",
+    ["📷 Kamera", "🖼️ Galeri"],
+    horizontal=True
+)
 
-if photo:
+image = None
 
-    image = Image.open(photo)
+if source == "📷 Kamera":
 
-    score = blur_score(image)
+    photo = st.camera_input(
+        "Ambil Foto"
+    )
 
-    st.write(f"Skor Ketajaman: {score:.0f}")
+    if photo:
+        image = Image.open(photo)
 
-    if mode == "OCR KTP HD":
-        text = scan_ktp(image)
-    else:
-        text = scan_text(image)
+else:
+
+    file = st.file_uploader(
+        "Pilih Gambar",
+        type=["jpg", "jpeg", "png"]
+    )
+
+    if file:
+        image = Image.open(file)
+
+if image:
+
+    st.image(
+        image,
+        caption="Gambar",
+        use_container_width=True
+    )
+
+    skor = blur_score(image)
+
+    st.write(
+        f"Skor Ketajaman: {skor:.0f}"
+    )
+
+    with st.spinner("Memproses OCR..."):
+
+        if mode == "OCR KTP HD":
+            hasil = scan_ktp(image)
+        else:
+            hasil = scan_text(image)
 
     st.text_area(
         "Hasil OCR",
-        value=text,
-        height=300
+        value=hasil,
+        height=350
+    )
+
+    st.download_button(
+        "📄 Download TXT",
+        hasil,
+        file_name="hasil_ocr.txt"
     )
