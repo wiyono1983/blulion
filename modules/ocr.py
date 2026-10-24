@@ -1,17 +1,17 @@
-import cv2
-import easyocr
-import numpy as np
 import re
+import cv2
+import numpy as np
+import easyocr
 
-# OCR Reader
+# Load OCR sekali saat aplikasi start
 reader = easyocr.Reader(
     ['id', 'en'],
     gpu=False
 )
 
-# ==========================
+# =========================
 # CEK BLUR
-# ==========================
+# =========================
 def blur_score(image):
 
     gray = cv2.cvtColor(
@@ -25,14 +25,38 @@ def blur_score(image):
     ).var()
 
 
-# ==========================
-# PREPROCESS HD
-# ==========================
-def preprocess_hd(image):
+# =========================
+# PREPROCESS UMUM
+# =========================
+def preprocess(image):
 
     img = np.array(image)
 
-    # Upscale HD
+    gray = cv2.cvtColor(
+        img,
+        cv2.COLOR_RGB2GRAY
+    )
+
+    gray = cv2.resize(
+        gray,
+        None,
+        fx=2,
+        fy=2,
+        interpolation=cv2.INTER_CUBIC
+    )
+
+    gray = cv2.equalizeHist(gray)
+
+    return gray
+
+
+# =========================
+# PREPROCESS KTP HD
+# =========================
+def preprocess_ktp(image):
+
+    img = np.array(image)
+
     img = cv2.resize(
         img,
         None,
@@ -46,105 +70,93 @@ def preprocess_hd(image):
         cv2.COLOR_RGB2GRAY
     )
 
-    # Contrast
     gray = cv2.equalizeHist(gray)
 
-    # Denoise
-    gray = cv2.fastNlMeansDenoising(
+    gray = cv2.GaussianBlur(
         gray,
-        None,
-        10,
-        7,
-        21
+        (3, 3),
+        0
     )
 
-    # Sharpen
     kernel = np.array([
-        [-1,-1,-1],
-        [-1, 9,-1],
-        [-1,-1,-1]
-    ])
-
-    sharp = cv2.filter2D(
+        [-1, -1, -1],
+        [-1,  9, -1],
+        [-1, -D(
         gray,
         -1,
         kernel
     )
 
-    # Adaptive Threshold
     thresh = cv2.adaptiveThreshold(
-        sharp,
+        gray,
         255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY,
-        15,
-        5
+        11,
+        2
     )
 
     return thresh
 
 
-# ==========================
+# =========================
 # OCR UMUM
-# ==========================
+# =========================
 def scan_text(image):
 
-    processed = preprocess_hd(image)
+    processed = preprocess(image)
 
-    results = reader.readtext(
+    result = reader.readtext(
         processed,
         detail=0,
         paragraph=True
     )
 
-    return "\n".join(results)
+    return "\n".join(result)
 
 
-# ==========================
+# =========================
 # CARI NIK
-# ==========================
+# =========================
 def extract_nik(text):
 
-    nik = re.findall(
+    niks = re.findall(
         r"\d{16}",
         text
     )
 
-    if nik:
-        return nik[0]
+    if len(niks) > 0:
+        return niks[0]
 
     return "-"
 
 
-# ==========================
+# =========================
 # OCR KTP HD
-# ==========================
+# =========================
 def scan_ktp(image):
 
-    processed = preprocess_hd(image)
+    processed = preprocess_ktp(image)
 
-    results = reader.readtext(
+    result = reader.readtext(
         processed,
         detail=0,
         paragraph=False
     )
 
-    raw_text = "\n".join(results)
+    raw_text = "\n".join(result)
 
     nik = extract_nik(raw_text)
 
-    output = []
+    hasil = []
 
-    output.append("=== HASIL OCR KTP HD ===")
-    output.append("")
-
-    output.append(f"NIK : {nik}")
-    output.append("")
+    hasil.append("=== DATA KTP ===")
+    hasil.append("")
+    hasil.append(f"NIK : {nik}")
+    hasil.append("")
 
     keywords = [
         "NAMA",
-        "TEMPAT",
-        "LAHIR",
         "ALAMAT",
         "RT/RW",
         "KEL",
@@ -153,24 +165,23 @@ def scan_ktp(image):
         "AGAMA",
         "STATUS",
         "PEKERJAAN",
-        "KEWARGANEGARAAN",
+        "LAHIR",
         "JENIS KELAMIN",
-        "GOL",
-        "DARAH"
+        "KEWARGANEGARAAN"
     ]
 
     for line in raw_text.split("\n"):
 
-        upper = line.upper()
+        up = line.upper()
 
         for keyword in keywords:
 
-            if keyword in upper:
-                output.append(line.strip())
+            if keyword in up:
+                hasil.append(line.strip())
                 break
 
-    output.append("")
-    output.append("========== OCR MENTAH ==========")
-    output.append(raw_text)
+    hasil.append("")
+    hasil.append("=== OCR MENTAH ===")
+    hasil.append(raw_text)
 
-    return "\n".join(output)
+    return "\n".join(hasil)
