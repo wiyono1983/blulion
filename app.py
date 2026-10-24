@@ -1,77 +1,39 @@
 import streamlit as st
-from PIL import Image
+import pandas as pd
+import os
 
-from modules.ocr import scan_text, scan_ktp, blur_score
+FILE_EXCEL = "data_barang.xlsx"
 
-st.set_page_config(
-    page_title="OCR Scanner",
-    page_icon="📷"
-)
+st.title("📦 Data Barang")
 
-st.title("📷 OCR Scanner")
-
-mode = st.radio(
-    "Mode OCR",
-    ["OCR Umum", "OCR KTP HD"],
-    horizontal=True
-)
-
-source = st.radio(
-    "Sumber Gambar",
-    ["📷 Kamera", "🖼️ Galeri"],
-    horizontal=True
-)
-
-image = None
-
-if source == "📷 Kamera":
-
-    photo = st.camera_input(
-        "Ambil Foto"
+if not os.path.exists(FILE_EXCEL):
+    pd.DataFrame(columns=["Nama Barang", "Modal"]).to_excel(
+        FILE_EXCEL,
+        index=False
     )
 
-    if photo:
-        image = Image.open(photo)
+with st.form("barang"):
+    nama_barang = st.text_input("Nama Barang")
+    modal = st.number_input("Harga Modal", min_value=0)
 
-else:
+    submit = st.form_submit_button("Simpan")
 
-    file = st.file_uploader(
-        "Pilih Gambar",
-        type=["jpg", "jpeg", "png"]
-    )
+if submit:
+    df = pd.read_excel(FILE_EXCEL)
 
-    if file:
-        image = Image.open(file)
+    data_baru = pd.DataFrame([
+        {
+            "Nama Barang": nama_barang,
+            "Modal": modal
+        }
+    ])
 
-if image:
+    df = pd.concat([df, data_baru], ignore_index=True)
+    df.to_excel(FILE_EXCEL, index=False)
 
-    st.image(
-        image,
-        caption="Gambar",
-        use_container_width=True
-    )
+    st.success("Data tersimpan")
 
-    skor = blur_score(image)
+st.subheader("Daftar Barang")
 
-    st.write(
-        f"Skor Ketajaman: {skor:.0f}"
-    )
-
-    with st.spinner("Memproses OCR..."):
-
-        if mode == "OCR KTP HD":
-            hasil = scan_ktp(image)
-        else:
-            hasil = scan_text(image)
-
-    st.text_area(
-        "Hasil OCR",
-        value=hasil,
-        height=350
-    )
-
-    st.download_button(
-        "📄 Download TXT",
-        hasil,
-        file_name="hasil_ocr.txt"
-    )
+df = pd.read_excel(FILE_EXCEL)
+st.dataframe(df, use_container_width=True)
