@@ -3,13 +3,17 @@ import easyocr
 import numpy as np
 import re
 
-# Inisialisasi OCR
+# Load OCR sekali saja
 reader = easyocr.Reader(
     ['id', 'en'],
     gpu=False
 )
 
+
 def preprocess(image):
+    """
+    Meningkatkan kualitas gambar sebelum OCR
+    """
 
     img = np.array(image)
 
@@ -52,57 +56,58 @@ def preprocess(image):
 
 
 def scan_text(image):
+    """
+    OCR umum
+    """
 
     processed = preprocess(image)
 
-    result = reader.readtext(
+    results = reader.readtext(
         processed,
         detail=0,
         paragraph=True
     )
 
-    return "\n".join(result)
+    return "\n".join(results)
 
 
-def extract_nik(text):
+def find_nik(text):
+    """
+    Cari NIK 16 digit
+    """
 
-    kandidat = re.findall(r"\d{16}", text)
+    nik_list = re.findall(r"\d{16}", text)
 
-    if kandidat:
-        return kandidat[0]
+    if nik_list:
+        return nik_list[0]
 
     return "-"
 
 
 def scan_ktp(image):
+    """
+    OCR khusus KTP
+    """
 
     processed = preprocess(image)
 
-    result = reader.readtext(
+    results = reader.readtext(
         processed,
         detail=0,
         paragraph=False
     )
 
-    lines = []
+    raw_text = "\n".join(results)
 
-    for item in result:
-        if isinstance(item, str):
-            lines.append(item)
-        else:
-            lines.append(str(item))
+    nik = find_nik(raw_text)
 
-    text = "\n".join(lines)
+    output = []
 
-    nik = extract_nik(text)
-
-    hasil = []
-    hasil.append(f"NIK : {nik}")
+    output.append("=== DATA KTP ===")
+    output.append(f"NIK : {nik}")
 
     keywords = [
         "NAMA",
-        "TEMPAT",
-        "LAHIR",
         "ALAMAT",
         "RT/RW",
         "KEL",
@@ -111,20 +116,23 @@ def scan_ktp(image):
         "AGAMA",
         "STATUS",
         "PEKERJAAN",
-        "KEWARGANEGARAAN"
+        "KEWARGANEGARAAN",
+        "LAHIR",
+        "JENIS KELAMIN"
     ]
 
-    for line in text.split("\n"):
+    for line in raw_text.split("\n"):
 
-        line_upper = line.upper()
+        upper = line.upper()
 
         for keyword in keywords:
 
-            if keyword in line_upper:
-                hasil.append(line.strip())
+            if keyword in upper:
+                output.append(line.strip())
                 break
 
-    if len(hasil) == 1:
-        return text
+    output.append("")
+    output.append("=== OCR MENTAH ===")
+    output.append(raw_text)
 
-    return "\n".join(hasil)
+    return "\n".join(output)
