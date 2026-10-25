@@ -631,44 +631,39 @@ if menu == "📦 Master Barang":
 # TRANSAKSI
 # =====================================================
 
+# =====================================================
+# TRANSAKSI
+# =====================================================
+
 if menu == "🛒 Transaksi":
 
     st.subheader("🛒 Transaksi Penjualan")
-
-    # ===================================
-    # DATA PELANGGAN
-    # ===================================
-
-    st.markdown("### 👤 Data Pelanggan")
 
     col1, col2 = st.columns(2)
 
     with col1:
 
         pelanggan = st.text_input(
-            "Nama Pelanggan (Opsional)"
+            "Nama Pelanggan"
         )
 
     with col2:
 
         no_wa = st.text_input(
-            "Nomor WhatsApp (Opsional)"
+            "WA Pelanggan (Opsional)"
         )
 
     if pelanggan.strip() == "":
         pelanggan = "UMUM"
 
-    if no_wa.strip() == "":
-        no_wa = "-"
+    wa_tujuan = st.text_input(
+        "Nomor WA Tujuan Nota"
+    )
 
     st.divider()
 
-    # ===================================
-    # METODE INPUT
-    # ===================================
-
     metode = st.radio(
-        "Metode Input Barang",
+        "Metode Input",
         [
             "Ambil Dari Master",
             "Input Manual"
@@ -676,35 +671,26 @@ if menu == "🛒 Transaksi":
         horizontal=True
     )
 
-    # ===================================
+    # =========================
     # DARI MASTER
-    # ===================================
+    # =========================
 
     if metode == "Ambil Dari Master":
 
-        if len(df_barang) == 0:
-
-            st.warning(
-                "Master barang masih kosong"
-            )
-
-        else:
+        if len(df_barang) > 0:
 
             barang = st.selectbox(
-                "Barang",
+                "Pilih Barang",
                 df_barang["Nama Barang"]
             )
 
-            data_barang = (
-                df_barang[
-                    df_barang["Nama Barang"]
-                    == barang
-                ]
-                .iloc[0]
-            )
+            data_barang = df_barang[
+                df_barang["Nama Barang"]
+                == barang
+            ].iloc[0]
 
             jenis_harga = st.selectbox(
-                "Gunakan Harga",
+                "Jenis Harga",
                 [
                     "Aktif",
                     "Grosir",
@@ -714,35 +700,21 @@ if menu == "🛒 Transaksi":
                 ]
             )
 
-            if jenis_harga == "Aktif":
+            harga_jual = (
+                data_barang["Harga Jual Aktif"]
+            )
 
-                harga_jual = data_barang[
-                    "Harga Jual Aktif"
-                ]
-
-            elif jenis_harga == "Grosir":
-
-                harga_jual = data_barang[
-                    "Harga Grosir"
-                ]
+            if jenis_harga == "Grosir":
+                harga_jual = data_barang["Harga Grosir"]
 
             elif jenis_harga == "Reseller":
-
-                harga_jual = data_barang[
-                    "Harga Reseller"
-                ]
+                harga_jual = data_barang["Harga Reseller"]
 
             elif jenis_harga == "Retail":
+                harga_jual = data_barang["Harga Retail"]
 
-                harga_jual = data_barang[
-                    "Harga Retail"
-                ]
-
-            else:
-
-                harga_jual = data_barang[
-                    "Harga Olshop"
-                ]
+            elif jenis_harga == "Olshop":
+                harga_jual = data_barang["Harga Olshop"]
 
             qty = st.number_input(
                 "Qty",
@@ -750,18 +722,13 @@ if menu == "🛒 Transaksi":
                 value=1
             )
 
-            subtotal = (
-                harga_jual * qty
-            )
+            subtotal = harga_jual * qty
 
             st.info(
-                f"Subtotal : "
-                f"{format_rupiah(subtotal)}"
+                f"Subtotal : {format_rupiah(subtotal)}"
             )
 
-            if st.button(
-                "➕ Tambah Barang"
-            ):
+            if st.button("➕ Tambah Barang"):
 
                 st.session_state.cart.append({
 
@@ -769,9 +736,7 @@ if menu == "🛒 Transaksi":
                     barang,
 
                     "Harga Modal":
-                    data_barang[
-                        "Harga Modal"
-                    ],
+                    data_barang["Harga Modal"],
 
                     "Harga Jual":
                     harga_jual,
@@ -786,57 +751,40 @@ if menu == "🛒 Transaksi":
                     (
                         harga_jual
                         -
-                        data_barang[
-                            "Harga Modal"
-                        ]
-                    )
-                    * qty
+                        data_barang["Harga Modal"]
+                    ) * qty
 
                 })
 
-                st.success(
-                    "Barang ditambahkan"
-                )
-
                 st.rerun()
 
-    # ===================================
-    # INPUT MANUAL
-    # ===================================
+    # =========================
+    # MANUAL
+    # =========================
 
     else:
 
-        nama_manual = st.text_input(
+        nama_barang = st.text_input(
             "Nama Barang"
         )
 
-        modal_manual = st.number_input(
+        harga_modal = st.number_input(
             "Harga Modal",
-            min_value=0.0,
-            step=100.0
+            min_value=0.0
         )
 
-        harga_manual = st.number_input(
+        harga_jual = st.number_input(
             "Harga Jual",
-            min_value=0.0,
-            step=100.0
+            min_value=0.0
         )
 
-        qty_manual = st.number_input(
+        qty = st.number_input(
             "Qty",
             min_value=1,
             value=1
         )
 
-        subtotal_manual = (
-            harga_manual
-            * qty_manual
-        )
-
-        st.info(
-            f"Subtotal : "
-            f"{format_rupiah(subtotal_manual)}"
-        )
+        subtotal = harga_jual * qty
 
         if st.button(
             "➕ Tambah Manual"
@@ -845,68 +793,56 @@ if menu == "🛒 Transaksi":
             st.session_state.cart.append({
 
                 "Nama Barang":
-                nama_manual,
+                nama_barang,
 
                 "Harga Modal":
-                modal_manual,
+                harga_modal,
 
                 "Harga Jual":
-                harga_manual,
+                harga_jual,
 
                 "Qty":
-                qty_manual,
+                qty,
 
                 "Subtotal":
-                subtotal_manual,
+                subtotal,
 
                 "Laba":
                 (
-                    harga_manual
-                    -
-                    modal_manual
-                )
-                * qty_manual
+                    harga_jual -
+                    harga_modal
+                ) * qty
 
             })
 
-            st.success(
-                "Barang ditambahkan"
-            )
-
             st.rerun()
-
-    # ===================================
-    # KERANJANG
-    # ===================================
 
     st.divider()
 
-    st.subheader(
-        "🧺 Keranjang"
-    )
+    # =========================
+    # KERANJANG
+    # =========================
 
-    if len(
-        st.session_state.cart
-    ) > 0:
+    if len(st.session_state.cart) > 0:
 
         cart_df = pd.DataFrame(
             st.session_state.cart
         )
+
+        st.subheader("🧺 Keranjang")
 
         st.dataframe(
             cart_df,
             use_container_width=True
         )
 
-        total = (
-            cart_df["Subtotal"]
-            .sum()
-        )
+        total = cart_df[
+            "Subtotal"
+        ].sum()
 
-        total_laba = (
-            cart_df["Laba"]
-            .sum()
-        )
+        total_laba = cart_df[
+            "Laba"
+        ].sum()
 
         col1, col2 = st.columns(2)
 
@@ -924,34 +860,9 @@ if menu == "🛒 Transaksi":
                 format_rupiah(total_laba)
             )
 
-        # ===============================
-        # HAPUS ITEM
-        # ===============================
-
-        hapus_idx = st.selectbox(
-            "Pilih Item",
-            range(len(cart_df)),
-            format_func=lambda x:
-            cart_df.iloc[x][
-                "Nama Barang"
-            ]
-        )
-
-        if st.button(
-            "🗑️ Hapus Item"
-        ):
-
-            st.session_state.cart.pop(
-                hapus_idx
-            )
-
-            st.rerun()
-
-        st.divider()
-
-        # ===============================
-        # SIMPAN TRANSAKSI
-        # ===============================
+        # ====================
+        # SIMPAN
+        # ====================
 
         if st.button(
             "💾 Simpan Transaksi"
@@ -959,8 +870,11 @@ if menu == "🛒 Transaksi":
 
             no_nota = generate_nota()
 
-            tanggal = datetime.now(
-            ).strftime(
+            st.session_state.last_nota = (
+                no_nota
+            )
+
+            tanggal = datetime.now().strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
 
@@ -986,34 +900,22 @@ if menu == "🛒 Transaksi":
                             no_wa,
 
                             "Nama Barang":
-                            item[
-                                "Nama Barang"
-                            ],
+                            item["Nama Barang"],
 
                             "Harga Modal":
-                            item[
-                                "Harga Modal"
-                            ],
+                            item["Harga Modal"],
 
                             "Harga Jual":
-                            item[
-                                "Harga Jual"
-                            ],
+                            item["Harga Jual"],
 
                             "Qty":
-                            item[
-                                "Qty"
-                            ],
+                            item["Qty"],
 
                             "Subtotal":
-                            item[
-                                "Subtotal"
-                            ],
+                            item["Subtotal"],
 
                             "Laba":
-                            item[
-                                "Laba"
-                            ]
+                            item["Laba"]
 
                         }])
                     ],
@@ -1023,58 +925,75 @@ if menu == "🛒 Transaksi":
             save_transaksi(trx)
 
             st.success(
-                f"Transaksi {no_nota} berhasil disimpan"
+                f"Transaksi {no_nota} disimpan"
             )
 
-            st.session_state.last_nota = no_nota
+        # ====================
+        # NOTA
+        # ====================
 
-        # ===============================
-        # GENERATE NOTA
-        # ===============================
+        no_nota_tampil = (
+            st.session_state.last_nota
+            if st.session_state.last_nota
+            else generate_nota()
+        )
 
-        nota = f"""
-🏪 TOKO SINAR TERANG
+        tanggal_nota = datetime.now().strftime(
+            "%d-%m-%Y %H:%M"
+        )
 
-Pelanggan : {pelanggan}
-WA : {no_wa}
+        nota = (
+            f"TOKO SINAR TERANG\n"
+            f"No Nota : {no_nota_tampil}\n"
+            f"Tanggal : {tanggal_nota}\n"
+            f"Pelanggan : {pelanggan}\n"
+        )
 
-========================
-"""
+        if no_wa.strip():
+            nota += f"WA : {no_wa}\n"
+
+        nota += "\n"
 
         for item in st.session_state.cart:
 
-            nota += f"""
+            nota += (
+                f"{item['Nama Barang']}\n"
+                f"{item['Qty']} x "
+                f"{format_rupiah(item['Harga Jual'])}"
+                f" = "
+                f"{format_rupiah(item['Subtotal'])}\n"
+            )
 
-{item['Nama Barang']}
-{item['Qty']} x {format_rupiah(item['Harga Jual'])}
-= {format_rupiah(item['Subtotal'])}
-
-"""
-
-        nota += f"""
-========================
-TOTAL
-{format_rupiah(total)}
-========================
-
-Terima kasih 🙏
-TOKO SINAR TERANG
-"""
-
-        st.text_area(
-            "🧾 Preview Nota",
-            nota,
-            height=300
+        nota += (
+            "\n"
+            f"TOTAL : {format_rupiah(total)}\n"
+            "\n"
+            "Terima kasih 🙏"
         )
 
-        # ===============================
-        # LINK WA
-        # ===============================
+        st.subheader(
+            "🧾 Nota Siap Kirim"
+        )
 
-        if no_wa != "-":
+        st.text_area(
+            "Nota",
+            nota,
+            height=220
+        )
+
+        st.code(
+            nota,
+            language=None
+        )
+
+        # ====================
+        # WHATSAPP
+        # ====================
+
+        if wa_tujuan.strip():
 
             nomor = (
-                no_wa
+                wa_tujuan
                 .replace("+", "")
                 .replace(" ", "")
             )
@@ -1083,13 +1002,11 @@ TOKO SINAR TERANG
                 "https://wa.me/"
                 + nomor
                 + "?text="
-                + urllib.parse.quote(
-                    nota
-                )
+                + urllib.parse.quote(nota)
             )
 
             st.link_button(
-                "📱 Kirim ke WhatsApp",
+                "📱 Kirim Nota ke WhatsApp",
                 wa_url
             )
 
@@ -1098,6 +1015,8 @@ TOKO SINAR TERANG
         st.info(
             "Keranjang masih kosong"
         )
+
+
 # =====================================================
 # RIWAYAT TRANSAKSI
 # =====================================================
