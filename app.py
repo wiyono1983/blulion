@@ -193,6 +193,10 @@ def generate_nota():
 if "cart" not in st.session_state:
     st.session_state.cart = []
 
+if "last_nota" not in st.session_state:
+    st.session_state.last_nota = ""
+
+
 # =====================================================
 # LOAD DATA
 # =====================================================
@@ -870,9 +874,8 @@ if menu == "🛒 Transaksi":
 
             no_nota = generate_nota()
 
-            st.session_state.last_nota = (
-                no_nota
-            )
+            st.session_state["last_nota"] = no_nota      
+
 
             tanggal = datetime.now().strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -932,11 +935,16 @@ if menu == "🛒 Transaksi":
         # NOTA
         # ====================
 
-        no_nota_tampil = (
-            st.session_state.last_nota
-            if st.session_state.last_nota
-            else generate_nota()
+        last_nota = st.session_state.get(
+            "last_nota",
+            ""
         )
+
+        if last_nota:
+            no_nota_tampil = last_nota
+        else:
+            no_nota_tampil = generate_nota()
+
 
         tanggal_nota = datetime.now().strftime(
             "%d-%m-%Y %H:%M"
