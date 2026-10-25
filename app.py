@@ -7,6 +7,7 @@ import urllib.parse
 
 from datetime import datetime
 from openpyxl import load_workbook
+from zoneinfo import ZoneInfo
 
 # =====================================================
 # KONFIGURASI APP
@@ -169,6 +170,11 @@ def save_setting(df):
         SETTING_FILE,
         index=False
     )
+def now_jakarta():
+
+    return datetime.now(
+        ZoneInfo("Asia/Jakarta")
+    )
 
 def format_rupiah(nilai):
 
@@ -182,8 +188,9 @@ def generate_nota():
 
     return (
         "ST-"
-        + datetime.now()
-        .strftime("%Y%m%d%H%M%S")
+        + now_jakarta().strftime(
+            "%Y%m%d%H%M%S"
+        )
     )
 
 # =====================================================
@@ -877,9 +884,10 @@ if menu == "🛒 Transaksi":
             st.session_state["last_nota"] = no_nota      
 
 
-            tanggal = datetime.now().strftime(
+            tanggal = now_jakarta().strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
+
 
             trx = load_transaksi()
 
@@ -946,9 +954,10 @@ if menu == "🛒 Transaksi":
             no_nota_tampil = generate_nota()
 
 
-        tanggal_nota = datetime.now().strftime(
+        tanggal_nota = now_jakarta().strftime(
             "%d-%m-%Y %H:%M"
         )
+
 
         nota = (
             f"TOKO SINAR TERANG\n"
