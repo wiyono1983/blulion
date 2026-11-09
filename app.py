@@ -4,6 +4,7 @@ import os
 import io
 import uuid
 import urllib.parse
+import requests
 
 from datetime import datetime
 from openpyxl import load_workbook
@@ -44,6 +45,37 @@ SETTING_FILE = os.path.join(
     DATA_DIR,
     "setting.xlsx"
 )
+# =====================================================
+# DATA BI
+# =====================================================
+
+@st.cache_data(ttl=3600)
+def get_bi_exchange_rate():
+
+    try:
+
+        url = (
+            "https://dataapi.bi.go.id/dataexchange/v1/"
+            "exchange-rates"
+        )
+
+        params = {
+            "currency": "USD"
+        }
+
+        response = requests.get(
+            url,
+            params=params,
+            timeout=30
+        )
+
+        return response.json()
+
+    except Exception as e:
+
+        return {
+            "error": str(e)
+        }
 
 # =====================================================
 # BUAT FILE DEFAULT
@@ -224,10 +256,12 @@ with st.sidebar:
         "POS & Laporan Penjualan"
     )
 
+
     menu = st.radio(
         "Menu",
         [
             "🏪 Dashboard",
+            "📈 Data BI",
             "📦 Master Barang",
             "🛒 Transaksi",
             "📄 Riwayat",
@@ -1449,3 +1483,22 @@ if menu == "⚙️ Pengaturan":
         )
 
         st.rerun()
+# =====================================================
+# DATA BI
+# =====================================================
+
+if menu == "📈 Data BI":
+
+    st.subheader("📈 Data Bank Indonesia")
+
+    data = get_bi_exchange_rate()
+
+    if "error" in data:
+
+        st.error(data["error"])
+
+    else:
+
+        st.write(data)
+
+        st.json(data)
